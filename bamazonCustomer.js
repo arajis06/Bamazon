@@ -1,7 +1,7 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
-const chalk = require("chalk";)
-const table = require("cli-table");
+const chalk = require("chalk");
+const Table = require("cli-table");
 
 const connection = mysql.createConnection({
   host: "localhost",
@@ -14,7 +14,7 @@ const connection = mysql.createConnection({
 
 connection.connect(function(err) {
   if (err) throw err;
-  console.log("Connected Successfully!");
+  console.log("\nConnected Successfully!");
   displayAllItems();
   //findProduct();
 });
@@ -22,24 +22,29 @@ connection.connect(function(err) {
 function displayAllItems() {
     connection.query("SELECT * FROM products", function(err, res) {
       if (err) throw err;
-      
-      console.log("\n=================**PRODUCTS**==================\n"); 
+
+      var table = new Table({
+          head: ["Item Id", "Product Name", "Department", "Price"],
+          colWidths: [10, 25, 25, 10]
+      });
+
+      console.log("\n==============================**PRODUCTS**================================"); 
       for (var i = 0; i < res.length; i++) {
         
-        var productResults = 
-        "Item Id: " + res[i].item_id +
-        "\nProduct: " + res[i].product_name +
-        "\nDepartment: " + res[i].department_name +
-        "\nPrice: " + res[i].price +
-        "\nIn Stock: " + res[i].stock_quantity +
-        "\nProduct Sales: " + res[i].product_sales +
-        "\n-----------------------------------------------";
-        console.log(productResults);
+        table.push([
+            res[i].item_id, 
+            res[i].product_name, 
+            res[i].department_name, 
+            `$${res[i].price}`
+        ]);
+        console.log(`\n\n${table.toString()}\n\n`);
+
+        //getItemId();
       }
     });
   }
 
-  function findProduct() {
+  function getItemId() {
     inquirer
     .prompt({
       name: "item_id",
@@ -53,7 +58,7 @@ function displayAllItems() {
           for (var i = 0; i < res.length; i++) {
             console.log("Product: " + res[i].product_name + " || Department: " + res[i].department_name + " || Price: " + res[i].price + "|| In Stock: " + res[i].stock_quantity);
           }
-          findProduct();
+          //findProduct();
         });
       });
   }
