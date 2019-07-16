@@ -2,6 +2,7 @@ const mysql = require("mysql");
 const inquirer = require("inquirer");
 const chalk = require("chalk");
 const Table = require("cli-table");
+const maxListenersExceededWarning = require('max-listeners-exceeded-warning');
 
 const connection = mysql.createConnection({
   host: "localhost",
@@ -28,7 +29,7 @@ function displayAllItems() {
           colWidths: [10, 25, 25, 10]
       });
 
-      console.log("\n==============================**PRODUCTS**================================"); 
+      console.log("\n=================================**PRODUCTS**=================================="); 
       for (var i = 0; i < res.length; i++) {
         
         table.push([
@@ -37,29 +38,63 @@ function displayAllItems() {
             res[i].department_name, 
             `$${res[i].price}`
         ]);
-        console.log(`\n\n${table.toString()}\n\n`);
 
-        //getItemId();
       }
+      console.log(`\n\n${table.toString()}\n\n`);
+      questions();
     });
   }
 
-  function getItemId() {
-    inquirer
-    .prompt({
-      name: "item_id",
+  function questions() {
+    inquirer.prompt({
+      name: "itemID",
       type: "input",
-      message: "Please eneter the ITEM_ID of the product you would like to purchase?"
+      message: "Please enter the ITEM ID of the product you would like to purchase?",
+      validate: function(value) {
+        if (!isNaN(value) && (value > 0 && value <= 10)) {
+            return true;
+        }
+        else {
+            console.log(" Please enter a number from 1-10");  
+            return false;
+        }
+      } 
     })
     .then(function(answer) {
-        var query = "SELECT product_name, product_department, price, stock_quanity FROM products WHERE ?";
-        connection.query(query, { item_id: answer.item_id }, function(err, res) {
+         connection.query = "SELECT product_name, product_department, price, stock_quanity FROM products WHERE ?",{ item_id: answer.itemID }, function(err, res) {
           if (err) throw err;
-          for (var i = 0; i < res.length; i++) {
-            console.log("Product: " + res[i].product_name + " || Department: " + res[i].department_name + " || Price: " + res[i].price + "|| In Stock: " + res[i].stock_quantity);
-          }
-          //findProduct();
-        });
+          process.exit();
+          //confirmItem();
+          askForQantity();
+        };
       });
   }
+
+function askForQantity() {
+  inquirer.prompt({
+    name: "quantity",
+    type: "input",
+    message: "Please enter the quantity?",
+      validate: function(value) {
+        if (!isNaN(value) && value > 0) {
+            return true;
+        }
+        else {
+            console.log(" Please enter a number greater than 0");  
+            return false;
+        }
+      }
+      .then(function(count) {
+        connection.query = "SELECT stock_quanity FROM products WHERE ?",{ item_id: count.itemID }, 
+        function(err, res) {
+          if (res[0].stock_quantity < answer.quantity) {
+            console.log("Out of Stock!");
+          }
+          if (err) throw err;
+          process.exit();
+        };
+      })
+      })
+}
+
   
