@@ -4,7 +4,7 @@ const mysql = require("mysql");
 const inquirer = require("inquirer");
 const chalk = require("chalk");
 const Table = require("cli-table");
-const maxListenersExceededWarning = require('max-listeners-exceeded-warning');
+// const maxListenersExceededWarning = require('max-listeners-exceeded-warning');
 
 const connection = mysql.createConnection({
   host: "localhost",
@@ -27,26 +27,30 @@ var selectedItem = {};
 
 // FUNCTIONS
 // =====================================================================================
-// function to reset the chosenItem array so that previous purchases are not inside
+// function to reset the selectedItem array so that previous purchases are not inside
 var resetCart = function() {
     selectedItem = {};
 }
 
 // function to display all items for sale
 var displayAllItems = function() {
-    connection.query(`SELECT * FROM products`, (err, res) => {
-        var listTable = new Table({
+    connection.query(`SELECT * FROM products`, function (err, res) {
+        var productTable = new Table({
             head: ['Item ID', 'Product Name', 'Price'],
             colWidths: [10, 30, 12]
         });
 
         for (var i = 0; i < res.length; i++) {
-            listTable.push([res[i].item_id, res[i].product_name, `$${res[i].price}`]);
+            productTable.push([
+                res[i].item_id, 
+                res[i].product_name, 
+                `$${res[i].price}`
+            ]);
         }
-        
-        console.log(`\n\n${listTable.toString()}\n\n`);
+        console.log(`\n\n${productTable.toString()}\n\n`);
+
         // ask user to enter ID of item they wish to purchase
-        askForID();
+        //askForID();
     });
 };
 
@@ -57,7 +61,7 @@ var askForID = function() {
         type: 'input',
         message: 'Enter the ID of the item you would like to purchase:',
         // validate input is number from 1-10
-        validate: (value) => {
+        validate: function (value) {
             if (!isNaN(value) && (value > 0 && value <= 10)) {
                 return true;
             } else {
@@ -66,7 +70,7 @@ var askForID = function() {
             }
         }
     // select all rows where ID = user's input
-    }).then((answer) => {
+    }).then(function (answer) {
         connection.query('SELECT item_id, product_name, price, stock_quantity, product_sales FROM products WHERE ?', { item_id: answer.itemID }, (err, res) => {
             // confirm with user that this is the product they'd like to purchase
             confirmItem(res[0].product_name, res);
@@ -80,7 +84,7 @@ var confirmItem = function(product, res) {
         name: 'confirmItem',
         type: 'confirm',
         message: `You chose` + chalk.green.bold(` '${product}'. `) + `Is this correct?`
-    }).then((answer) => {
+    }).then(function (answer) {
         if (answer.confirmItem) {
             selectedItem = {
                 item_id: res[0].item_id,
@@ -103,7 +107,7 @@ var askHowMany = function() {
         name: 'howMany',
         type: 'input',
         message: 'How many would you like to purchase?',
-        validate: (value) => {
+        validate: function(value) {
             if (!isNaN(value) && value > 0) {
                 return true;
             } else {
@@ -111,7 +115,7 @@ var askHowMany = function() {
                 return false;
             }
         }
-    }).then((answer) => {
+    }).then(function (answer) {
         connection.query('SELECT stock_quantity FROM products WHERE ?', { item_id: selectedItem.item_id }, (err, res) => {
             // if there are not enough products in stock
             if (res[0].stock_quantity < answer.howMany) {
@@ -121,7 +125,7 @@ var askHowMany = function() {
                     name: 'proceed',
                     type: 'confirm',
                     message: 'Would you still like to purchase this product?'
-                }).then((answer) => {
+                }).then(function (answer) {
                     if (answer.proceed) {
                         askHowMany(selectedItem.item_id);
                     } else {
@@ -143,8 +147,8 @@ var askHowMany = function() {
                     {
                         item_id: selectedItem.item_id
                     }
-                ], (err, res) => {
-                    console.log(chalk.green.bold(`\n\tOrder confirmed!!! Your total was $${(selectedItem.price * selectedItem.howMany).toFixed(2)}.\n`));
+                ], function (err, res) {
+                    console.log(chalk.green.bold(`\n\tOrder confirmed! Your total is $${(selectedItem.price * selectedItem.howMany).toFixed(2)}.\n`));
                     // ask if user would like to make another purchase
                     promptNewPurchase();
                 });
@@ -159,12 +163,12 @@ var promptNewPurchase = function() {
         name: 'newPurchase',
         type: 'confirm',
         message: 'Would you like to make another purchase?'
-    }).then((answer) => {
+    }).then(function (answer) {
         if (answer.newPurchase) {
             resetCart();
             askForID();
         } else {
-            console.log(chalk.blue.bold('\n\tWe appreciate your business. Have a great day!\n'));
+            console.log(chalk.blue.bold('\n\tThanks for shopping with us. Have a great day!\n'));
             connection.end();
         }
     });

@@ -36,6 +36,7 @@ CREATE TABLE departments (
     department_id INT NOT NULL AUTO_INCREMENT,
     department_name TEXT NOT NULL,
     over_head_costs DECIMAL(10, 2) NOT NULL,
+    total_sales DECIMAL(10,2) NOT NULL DEFAULT '0.00',
     PRIMARY KEY (department_id)
 );
 

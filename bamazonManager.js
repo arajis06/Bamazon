@@ -4,7 +4,7 @@ const mysql = require("mysql");
 const inquirer = require("inquirer");
 const chalk = require("chalk");
 const Table = require("cli-table");
-const maxListenersExceededWarning = require('max-listeners-exceeded-warning');
+// const maxListenersExceededWarning = require('max-listeners-exceeded-warning');
 
 const connection = mysql.createConnection({
   host: "localhost",
@@ -48,7 +48,7 @@ var displayMenu = function() {
             'Add New Product',
             'Remove A Product'
         ]
-    }).then((answer) => {
+    }).then(function (answer) {
         switch (answer.action) {
             case 'View Products for Sale':
                 viewActiveProducts();
@@ -70,36 +70,37 @@ var displayMenu = function() {
 };
 
 var viewActiveProducts = function() {
-    connection.query(`SELECT * FROM products`, (err, res) => {
-        var listTable = new Table({
+    connection.query(`SELECT * FROM products`, function(err, res) {
+
+        var productTable = new Table({
             head: ['Item ID', 'Product Name', 'In Stock', 'Price'],
             colWidths: [10, 45, 10, 12]
         });
 
         for (var i = 0; i < res.length; i++) {
-            listTable.push([res[i].item_id, res[i].product_name, res[i].stock_quantity, `$${res[i].price}`]);
+            productTable.push([res[i].item_id, res[i].product_name, res[i].stock_quantity, `$${res[i].price}`]);
             // console.log(chalk.blue.bold(`\n\tItem ID: ${res[i].item_id}\n\tProduct Name: ${res[i].product_name}\n\tPrice: $${res[i].price}\n`));
         }
 
-        console.log(`\n\n${listTable.toString()}\n\n`);
+        console.log(`\n\n${productTable.toString()}\n\n`);
         connection.end();
     });
 };
 
 var viewLowInventory = function() {
-    connection.query(`SELECT * FROM products WHERE stock_quantity < 5 ORDER BY stock_quantity DESC`, (err, res) => {
+    connection.query(`SELECT * FROM products WHERE stock_quantity < 5 ORDER BY stock_quantity DESC`, function(err, res) {
         if (res.length > 0) {
-            var listTable = new Table({
+            var productTable = new Table({
                 head: ['Item ID', 'Product Name', 'In Stock', 'Price'],
                 colWidths: [10, 45, 10, 12]
             });
 
             for (var i = 0; i < res.length; i++) {
-                listTable.push([res[i].item_id, res[i].product_name, res[i].stock_quantity, `$${res[i].price}`]);
+                productTable.push([res[i].item_id, res[i].product_name, res[i].stock_quantity, `$${res[i].price}`]);
                 // console.log(chalk.blue.bold(`\n\tItem ID: ${res[i].item_id}\n\tProduct Name: ${res[i].product_name}\n\tPrice: $${res[i].price}\n`));
             }
 
-            console.log(`\n\n${listTable.toString()}\n\n`);
+            console.log(`\n\n${productTable.toString()}\n\n`);
 
         } else {
             console.log(chalk.blue.bold('\n\tNo low-stock items!\n'));
@@ -128,7 +129,7 @@ var addNewProduct = function() {
             name: 'price',
             type: 'input',
             message: 'Enter the product price:',
-            validate: (value) => {
+            validate: function(value) {
                 if (!isNaN(value) && value > 0) {
                     return true;
                 } else {
@@ -141,7 +142,7 @@ var addNewProduct = function() {
             name: 'stockNum',
             type: 'input',
             message: 'Enter the number of items in stock:',
-            validate: (value) => {
+            validate: function(value) {
                 if (!isNaN(value) && value > 0) {
                     return true;
                 } else {
@@ -150,13 +151,13 @@ var addNewProduct = function() {
                 }
             }
         }
-    ]).then((answers) => {
+    ]).then(function(answers) {
         connection.query('INSERT INTO products SET ?', {
             product_name: answers.name,
             department_name: answers.department,
             price: answers.price,
             stock_quantity: answers.stockNum
-        }, (err, res) => {
+        }, function(err, res) {
             if (err) throw err;
             console.log(chalk.blue.bold('\n\tItem successfully added!'));
             viewActiveProducts();
@@ -169,18 +170,18 @@ var deleteProduct = function() {
         name: 'itemID',
         type: 'input',
         message: 'Enter the ID of the product you\'d like to remove:'
-    }).then((answer) => {
-        connection.query('SELECT * FROM products WHERE ?', { item_id: answer.itemID }, (err, res) => {
+    }).then(function(answer) {
+        connection.query('SELECT * FROM products WHERE ?', { item_id: answer.itemID }, function(err, res) {
             inquirer.prompt({
                 name: 'confirm',
                 type: 'confirm',
                 message: `You would like to delete` + chalk.blue.bold(` '${res[0].product_name}'. `) + `Is this correct?`
-            }).then((answer) => {
+            }).then(function(answer) {
                 if (answer.confirm) {
                     itemToDelete = {
                         item_id: res[0].item_id
                     };
-                    connection.query('DELETE FROM products WHERE ?', { item_id: itemToDelete.item_id }, (err, res) => {
+                    connection.query('DELETE FROM products WHERE ?', { item_id: itemToDelete.item_id }, function(err, res) {
                         if (err) throw err;
                         console.log(chalk.blue.bold('\n\tItem successfully removed!'));
                         viewActiveProducts();
@@ -199,7 +200,7 @@ var askForID = function() {
         type: 'input',
         message: 'Enter the ID of the item you\'d like to update:',
         // validate input is number from 1-10
-        validate: (value) => {
+        validate: function(value) {
             if (!isNaN(value) && (value > 0 && value <= 10)) {
                 return true;
             } else {
@@ -208,8 +209,8 @@ var askForID = function() {
             }
         }
         // select all rows where ID = user's input
-    }).then((answer) => {
-        connection.query('SELECT * FROM products WHERE ?', { item_id: answer.itemID }, (err, res) => {
+    }).then(function(answer) {
+        connection.query('SELECT * FROM products WHERE ?', { item_id: answer.itemID }, function(err, res) {
             confirmItem(res[0].product_name, res);
         });
     });
@@ -220,7 +221,7 @@ var confirmItem = function(product, object) {
         name: 'confirmItem',
         type: 'confirm',
         message: `You chose` + chalk.blue.bold(` '${product}'. `) + `Is this correct?`
-    }).then((answer) => {
+    }).then(function(answer) {
         if (answer.confirmItem) {
             itemToUpdate = {
                 item_id: object[0].item_id,
@@ -242,7 +243,7 @@ var askHowMany = function() {
         name: 'howMany',
         type: 'input',
         message: 'Enter the quantity you would like to add:',
-        validate: (value) => {
+        validate: function(value) {
             if (!isNaN(value) && value > 0) {
                 return true;
             } else {
@@ -250,7 +251,7 @@ var askHowMany = function() {
                 return false;
             }
         }
-    }).then((answer) => {
+    }).then(function(answer) {
         itemToUpdate.howMany = answer.howMany;
         connection.query('UPDATE products SET ? WHERE ?', [
             {
@@ -259,7 +260,7 @@ var askHowMany = function() {
             {
                 item_id: itemToUpdate.item_id
             }
-        ], (err, res) => {
+        ], function(err, res) {
             console.log(chalk.blue.bold(`\n\tInventory updated! '${itemToUpdate.product_name}' now has ${Number(itemToUpdate.stock_quantity) + Number(itemToUpdate.howMany)} items in stock\n`));
             connection.end();
         });
