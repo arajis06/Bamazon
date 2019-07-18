@@ -20,6 +20,7 @@
   "dependencies": {
     "chalk": "^2.4.2",
     "cli-table": "^0.3.1",
+    "dotenv": "^8.0.0",
     "inquirer": "^6.5.0",
     "max-listeners-exceeded-warning": "0.0.1",
     "mysql": "^2.17.1"
